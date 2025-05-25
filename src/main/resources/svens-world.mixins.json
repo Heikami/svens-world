@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "ca.svens.world.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"ExampleMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

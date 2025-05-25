@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "svens-world",
+	"version": "${version}",
+	"name": "Svens World",
+	"description": "This is a mod for sven",
+	"authors": [
+		"Attixem."
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/svens-world/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"ca.svens.world.SvensWorld"
+		],
+		"fabric-datagen": [
+			"ca.svens.world.SvensWorldDataGenerator"
+		],
+		"client": [
+			"ca.svens.world.SvensWorldClient"
+		]
+	},
+	"mixins": [
+		"svens-world.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.16.14",
+		"minecraft": "~1.21.5",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
