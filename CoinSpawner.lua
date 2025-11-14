@@ -219,10 +219,13 @@ function CoinSpawner.spawnCoin(barrelPos, floorY, attackSourcePos)
 		local randomSpawnRadius = SPAWN_RADIUS + math.random(-1, 2) / 2
 		local randomLandRadius = SPAWN_RADIUS + 10 + math.random(-5, 5)
 
+		-- Calculate positions and clamp ALL to floor bounds to prevent flying outside
 		local spawnPos = barrelPos + spawnDir * randomSpawnRadius + Vector3.new(0, 1, 0)
-		local peakPos = barrelPos + spawnDir * (SPAWN_RADIUS + 4.5) + Vector3.new(0, randomArcHeight, 0)
+		spawnPos = clampToFloorBounds(spawnPos, floorBounds)
 
-		-- ⭐ ORIGINAL HEIGHT CALCULATION, THEN CLAMP X AND Z TO FLOOR BOUNDS
+		local peakPos = barrelPos + spawnDir * (SPAWN_RADIUS + 4.5) + Vector3.new(0, randomArcHeight, 0)
+		peakPos = clampToFloorBounds(peakPos, floorBounds)
+
 		local landPos = Vector3.new(
 			barrelPos.X + spawnDir.X * randomLandRadius,
 			floorY,
