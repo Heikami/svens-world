@@ -48,31 +48,41 @@ local function getFloorBoundsFromPosition(barrelPos)
 		return nil
 	end
 
-	local boundsSize = bestBounds.Size
-	local boundsPos = bestBounds.Position
-
+	-- Return the bounds part itself and its size for rotation-aware clamping
 	return {
-		minX = boundsPos.X - (boundsSize.X / 2),
-		maxX = boundsPos.X + (boundsSize.X / 2),
-		minZ = boundsPos.Z - (boundsSize.Z / 2),
-		maxZ = boundsPos.Z + (boundsSize.Z / 2),
+		part = bestBounds,
+		size = bestBounds.Size,
 	}
 end
 
 --------------------------------------------------------------------------------
--- HELPER: Clamp Position to Floor Bounds
+-- HELPER: Clamp Position to Floor Bounds (Rotation-Aware)
 --------------------------------------------------------------------------------
 
 local function clampToFloorBounds(position, floorBounds)
-	if not floorBounds then
+	if not floorBounds or not floorBounds.part then
 		return position
 	end
 
+	local boundsPart = floorBounds.part
+	local boundsSize = floorBounds.size
 	local margin = 0.5
-	local clampedX = math.max(floorBounds.minX + margin, math.min(position.X, floorBounds.maxX - margin))
-	local clampedZ = math.max(floorBounds.minZ + margin, math.min(position.Z, floorBounds.maxZ - margin))
 
-	return Vector3.new(clampedX, position.Y, clampedZ)
+	-- Transform position to bounds' local space
+	local localPos = boundsPart.CFrame:PointToObjectSpace(position)
+
+	-- Clamp in local space (where bounds is axis-aligned)
+	local halfX = (boundsSize.X / 2) - margin
+	local halfZ = (boundsSize.Z / 2) - margin
+
+	local clampedLocalX = math.max(-halfX, math.min(localPos.X, halfX))
+	local clampedLocalZ = math.max(-halfZ, math.min(localPos.Z, halfZ))
+
+	-- Keep original Y in local space
+	local clampedLocal = Vector3.new(clampedLocalX, localPos.Y, clampedLocalZ)
+
+	-- Transform back to world space
+	return boundsPart.CFrame:PointToWorldSpace(clampedLocal)
 end
 
 --------------------------------------------------------------------------------
