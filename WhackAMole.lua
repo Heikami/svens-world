@@ -78,7 +78,7 @@ local function getRandomPositionInZone(spawnZone)
 	return position
 end
 
--- Helper: Hide prop with animation
+-- Helper: Hide prop with animation (move underground)
 local function hideProp(prop)
 	if not prop or not prop.Parent then
 		return
@@ -88,35 +88,22 @@ local function hideProp(prop)
 	prop:SetAttribute("_IsHiddenByWhackAMole", true)
 	prop:SetAttribute("CanTakeDamage", false)
 
-	-- Get all parts
-	local parts = {}
-	for _, child in ipairs(prop:GetDescendants()) do
-		if child:IsA("BasePart") then
-			table.insert(parts, child)
-		end
+	-- Get current position and move down underground
+	local currentCFrame = prop:GetPivot()
+	local undergroundCFrame = currentCFrame * CFrame.new(0, -30, 0)  -- Move 30 studs down
+
+	-- Animate moving underground
+	for i = 0, 10 do
+		task.wait(0.05)
+		if not prop or not prop.Parent then break end
+
+		local progress = i / 10
+		local interpolatedCFrame = currentCFrame:Lerp(undergroundCFrame, progress)
+		prop:PivotTo(interpolatedCFrame)
 	end
 
-	-- Fade out and shrink
-	for _, part in ipairs(parts) do
-		if part.Name ~= "HealthBarAnchor" then
-			local originalTransparency = part.Transparency
-			local originalSize = part.Size
-
-			-- Shrink and fade out
-			for i = 0, 10 do
-				task.wait(0.05)
-				if not prop or not prop.Parent then break end
-
-				local progress = i / 10
-				part.Transparency = originalTransparency + (1 - originalTransparency) * progress
-				part.Size = originalSize * (1 - progress * 0.8)  -- Shrink to 20% of original size
-			end
-
-			-- Hide completely
-			part.Transparency = 1
-			part.CanCollide = false
-		end
-	end
+	-- Ensure fully underground
+	prop:PivotTo(undergroundCFrame)
 
 	-- Hide health bar
 	local healthBarAnchor = prop:FindFirstChild("HealthBarAnchor")
@@ -130,56 +117,42 @@ local function hideProp(prop)
 	print("   ↓ " .. prop.Name .. " hidden underground")
 end
 
--- Helper: Show prop with pop animation
+-- Helper: Show prop with pop animation (move up from underground)
 local function showProp(prop, newPosition)
 	if not prop or not prop.Parent then
 		return
 	end
 
-	-- Move to new position
+	-- First, move to new horizontal position while still underground
+	local undergroundPos = prop:GetPivot()
 	if newPosition then
-		local currentPos = prop:GetPivot().Position
-		prop:PivotTo(CFrame.new(newPosition) * prop:GetPivot():inverse())
+		-- Move horizontally to new position, keeping Y underground
+		local newUndergroundCFrame = CFrame.new(newPosition) * prop:GetPivot():inverse()
+		newUndergroundCFrame = newUndergroundCFrame * CFrame.new(0, -30, 0)  -- Keep underground
+		prop:PivotTo(newUndergroundCFrame)
+		undergroundPos = prop:GetPivot()
 	end
+
+	-- Now move up from underground to surface
+	local surfaceCFrame = undergroundPos * CFrame.new(0, 30, 0)  -- Move 30 studs up
+
+	-- Animate moving up
+	for i = 0, 8 do
+		task.wait(0.04)
+		if not prop or not prop.Parent then break end
+
+		local progress = i / 8
+		local interpolatedCFrame = undergroundPos:Lerp(surfaceCFrame, progress)
+		prop:PivotTo(interpolatedCFrame)
+	end
+
+	-- Ensure at surface position
+	prop:PivotTo(surfaceCFrame)
 
 	-- Mark as no longer hidden
 	prop:SetAttribute("_IsHiddenByWhackAMole", false)
 	prop:SetAttribute("CanTakeDamage", true)
 	prop:SetAttribute("_LastPopTime", tick())
-
-	-- Get all parts
-	local parts = {}
-	for _, child in ipairs(prop:GetDescendants()) do
-		if child:IsA("BasePart") then
-			table.insert(parts, child)
-		end
-	end
-
-	-- Pop out with animation
-	for _, part in ipairs(parts) do
-		if part.Name ~= "HealthBarAnchor" then
-			local originalTransparency = part.Transparency or 0
-			local originalSize = part.Size
-
-			part.Transparency = 1
-			part.CanCollide = true
-			part.Size = originalSize * 0.2  -- Start small
-
-			-- Expand and fade in
-			for i = 0, 8 do
-				task.wait(0.04)
-				if not prop or not prop.Parent then break end
-
-				local progress = i / 8
-				part.Transparency = 1 - progress
-				part.Size = originalSize * (0.2 + progress * 0.8)
-			end
-
-			-- Finalize
-			part.Transparency = originalTransparency
-			part.Size = originalSize
-		end
-	end
 
 	-- Show health bar
 	local healthBarAnchor = prop:FindFirstChild("HealthBarAnchor")

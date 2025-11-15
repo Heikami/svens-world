@@ -73,26 +73,18 @@ local function hideProp(prop)
 	prop:SetAttribute("_IsHiddenByWhackAMole", true)
 	prop:SetAttribute("CanTakeDamage", false)
 
-	local parts = {}
-	for _, child in ipairs(prop:GetDescendants()) do
-		if child:IsA("BasePart") then table.insert(parts, child) end
+	local currentCFrame = prop:GetPivot()
+	local undergroundCFrame = currentCFrame * CFrame.new(0, -30, 0)
+
+	for i = 0, 5 do
+		task.wait(0.04)
+		if not prop or not prop.Parent then break end
+		local progress = i / 5
+		local interpolatedCFrame = currentCFrame:Lerp(undergroundCFrame, progress)
+		prop:PivotTo(interpolatedCFrame)
 	end
 
-	for _, part in ipairs(parts) do
-		if part.Name ~= "HealthBarAnchor" then
-			local originalTransparency = part.Transparency
-			local originalSize = part.Size
-			for i = 0, 5 do
-				task.wait(0.04)
-				if not prop or not prop.Parent then break end
-				local progress = i / 5
-				part.Transparency = originalTransparency + (1 - originalTransparency) * progress
-				part.Size = originalSize * (1 - progress * 0.8)
-			end
-			part.Transparency = 1
-			part.CanCollide = false
-		end
-	end
+	prop:PivotTo(undergroundCFrame)
 
 	local healthBarAnchor = prop:FindFirstChild("HealthBarAnchor")
 	if healthBarAnchor then
@@ -103,36 +95,29 @@ end
 
 local function showProp(prop, newPosition)
 	if not prop or not prop.Parent then return end
+
+	local undergroundPos = prop:GetPivot()
 	if newPosition then
-		prop:PivotTo(CFrame.new(newPosition) * prop:GetPivot():inverse())
+		local newUndergroundCFrame = CFrame.new(newPosition) * prop:GetPivot():inverse()
+		newUndergroundCFrame = newUndergroundCFrame * CFrame.new(0, -30, 0)
+		prop:PivotTo(newUndergroundCFrame)
+		undergroundPos = prop:GetPivot()
 	end
+
+	local surfaceCFrame = undergroundPos * CFrame.new(0, 30, 0)
+
+	for i = 0, 4 do
+		task.wait(0.04)
+		if not prop or not prop.Parent then break end
+		local progress = i / 4
+		local interpolatedCFrame = undergroundPos:Lerp(surfaceCFrame, progress)
+		prop:PivotTo(interpolatedCFrame)
+	end
+
+	prop:PivotTo(surfaceCFrame)
 	prop:SetAttribute("_IsHiddenByWhackAMole", false)
 	prop:SetAttribute("CanTakeDamage", true)
 	prop:SetAttribute("_LastPopTime", tick())
-
-	local parts = {}
-	for _, child in ipairs(prop:GetDescendants()) do
-		if child:IsA("BasePart") then table.insert(parts, child) end
-	end
-
-	for _, part in ipairs(parts) do
-		if part.Name ~= "HealthBarAnchor" then
-			local originalTransparency = part.Transparency or 0
-			local originalSize = part.Size
-			part.Transparency = 1
-			part.CanCollide = true
-			part.Size = originalSize * 0.2
-			for i = 0, 4 do
-				task.wait(0.04)
-				if not prop or not prop.Parent then break end
-				local progress = i / 4
-				part.Transparency = 1 - progress
-				part.Size = originalSize * (0.2 + progress * 0.8)
-			end
-			part.Transparency = originalTransparency
-			part.Size = originalSize
-		end
-	end
 
 	local healthBarAnchor = prop:FindFirstChild("HealthBarAnchor")
 	if healthBarAnchor then
@@ -373,73 +358,62 @@ local function hidePropSync(prop)
 	prop:SetAttribute("_IsHiddenByWhackAMole", true)
 	prop:SetAttribute("CanTakeDamage", false)
 
-	local parts = {}
-	for _, child in ipairs(prop:GetDescendants()) do
-		if child:IsA("BasePart") then table.insert(parts, child) end
-	end
-
 	task.spawn(function()
-		for _, part in ipairs(parts) do
-			if part.Name ~= "HealthBarAnchor" then
-				local originalTransparency = part.Transparency
-				local originalSize = part.Size
-				for i = 0, 10 do
-					task.wait(0.05)
-					if not prop or not prop.Parent then break end
-					local progress = i / 10
-					part.Transparency = originalTransparency + (1 - originalTransparency) * progress
-					part.Size = originalSize * (1 - progress * 0.8)
-				end
-				part.Transparency = 1
-				part.CanCollide = false
-			end
+		local currentCFrame = prop:GetPivot()
+		local undergroundCFrame = currentCFrame * CFrame.new(0, -30, 0)
+
+		for i = 0, 10 do
+			task.wait(0.05)
+			if not prop or not prop.Parent then break end
+			local progress = i / 10
+			local interpolatedCFrame = currentCFrame:Lerp(undergroundCFrame, progress)
+			prop:PivotTo(interpolatedCFrame)
 		end
 
-		local healthBarAnchor = prop:FindFirstChild("HealthBarAnchor")
-		if healthBarAnchor then
-			local billboard = healthBarAnchor:FindFirstChild("HealthBarTemplate")
-			if billboard then billboard.Enabled = false end
+		if prop and prop.Parent then
+			prop:PivotTo(undergroundCFrame)
+
+			local healthBarAnchor = prop:FindFirstChild("HealthBarAnchor")
+			if healthBarAnchor then
+				local billboard = healthBarAnchor:FindFirstChild("HealthBarTemplate")
+				if billboard then billboard.Enabled = false end
+			end
 		end
 	end)
 end
 
 local function showPropSync(prop, newPosition)
 	if not prop or not prop.Parent then return end
-	if newPosition then
-		prop:PivotTo(CFrame.new(newPosition) * prop:GetPivot():inverse())
-	end
-	prop:SetAttribute("_IsHiddenByWhackAMole", false)
-	prop:SetAttribute("CanTakeDamage", true)
-
-	local parts = {}
-	for _, child in ipairs(prop:GetDescendants()) do
-		if child:IsA("BasePart") then table.insert(parts, child) end
-	end
 
 	task.spawn(function()
-		for _, part in ipairs(parts) do
-			if part.Name ~= "HealthBarAnchor" then
-				local originalTransparency = part.Transparency or 0
-				local originalSize = part.Size
-				part.Transparency = 1
-				part.CanCollide = true
-				part.Size = originalSize * 0.2
-				for i = 0, 8 do
-					task.wait(0.04)
-					if not prop or not prop.Parent then break end
-					local progress = i / 8
-					part.Transparency = 1 - progress
-					part.Size = originalSize * (0.2 + progress * 0.8)
-				end
-				part.Transparency = originalTransparency
-				part.Size = originalSize
-			end
+		local undergroundPos = prop:GetPivot()
+		if newPosition then
+			local newUndergroundCFrame = CFrame.new(newPosition) * prop:GetPivot():inverse()
+			newUndergroundCFrame = newUndergroundCFrame * CFrame.new(0, -30, 0)
+			prop:PivotTo(newUndergroundCFrame)
+			undergroundPos = prop:GetPivot()
 		end
 
-		local healthBarAnchor = prop:FindFirstChild("HealthBarAnchor")
-		if healthBarAnchor then
-			local billboard = healthBarAnchor:FindFirstChild("HealthBarTemplate")
-			if billboard then billboard.Enabled = true end
+		local surfaceCFrame = undergroundPos * CFrame.new(0, 30, 0)
+
+		for i = 0, 8 do
+			task.wait(0.04)
+			if not prop or not prop.Parent then break end
+			local progress = i / 8
+			local interpolatedCFrame = undergroundPos:Lerp(surfaceCFrame, progress)
+			prop:PivotTo(interpolatedCFrame)
+		end
+
+		if prop and prop.Parent then
+			prop:PivotTo(surfaceCFrame)
+			prop:SetAttribute("_IsHiddenByWhackAMole", false)
+			prop:SetAttribute("CanTakeDamage", true)
+
+			local healthBarAnchor = prop:FindFirstChild("HealthBarAnchor")
+			if healthBarAnchor then
+				local billboard = healthBarAnchor:FindFirstChild("HealthBarTemplate")
+				if billboard then billboard.Enabled = true end
+			end
 		end
 	end)
 end
